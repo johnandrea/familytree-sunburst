@@ -4,7 +4,7 @@ Requires use of an associated javascript library and d3.js
 
 This code is released under the MIT License: https://opensource.org/licenses/MIT
 Copyright (c) 2023 John A. Andrea
-v0.2
+v0.3
 
 No support provided.
 """
@@ -16,24 +16,35 @@ import re
 import os
 
 DEFAULT_COLOR = '#e0f3f8'  #level missing or out of range, bluish
-# colors from d3 RdYlGn
-LEVEL_COLORS = {'0':'#a50026', # unidentified ancestor, redish
-                '1':'#d73027', # names only, redorangish
-                '2':'#f46d43', # vital stats, lighter red
-                '3':'#fdae61', # occ, residence, children, spouses, orangish
-                '4':'#fee08b', # property, military service, yellowish
-                '5':'#a6d96a', # genealogical proof standard, light greenish
-                '6':'#1a9850'  # biography, greenish
+
+LEVEL_COLORS = {0:'#a50026', # unidentified ancestor, redish
+                1:'#d73027', # names only, redorangish
+                2:'#f46d43', # vital stats, lighter red
+                3:'#fdae61', # occ, residence, children, spouses, orangish
+                4:'#fee08b', # property, military service, yellowish
+                5:'#a6d96a', # genealogical proof standard, light greenish
+                6:'#1a9850'  # biography, greenish
                }
 
 PLAIN_COLORS = ['#E5D8BD', '#FFFFB3', '#BEBADA', '#FB8072', '#80B1D3', '#FDB462',
                 '#B3DE69', '#FCCDE5', '#D9D9D9', '#BC80BD', '#CCEBC5', '#FFED6F',
                 '#E5C494', '#BCBD22', '#CCEBC5' ]
 
-n_plain_colors = len( PLAIN_COLORS ) - 1
-color_index = 0 # or should it be random to start
+N_PLAIN_COLORS = len( PLAIN_COLORS ) - 1
 
 GENDER_COLORS = {'f':'#FB8072', 'm':'#80B1D3', 'x':'#FFFFB3'}
+
+# these are global flags
+color_index = 0
+use_levels = False
+use_gender = False
+levels_tag = None
+add_dates = False
+n_individuals = 0
+levels_stats = {'missing':0, 'not numeric':0, 'out of range':0}
+for level in LEVEL_COLORS:
+    levels_stats[level] = 0
+indent_more = ' '
 
 
 def load_my_module( module_name, relative_path ):
@@ -69,7 +80,7 @@ def get_program_options():
 
     directions = [ 'desc', 'descendant', 'descendants', 'descendent', 'descendents',
                    'anc', 'ancestor', 'ancestors' ]
-    schemes = [ 'plain', 'gender', 'level' ]
+    schemes = [ 'plain', 'gender', 'levels' ]
 
     results['infile'] = None
     results['start_person'] = None
@@ -136,7 +147,8 @@ def looks_like_int( s ):
 
 
 def fix_names( s ):
-    # can't handle "[ em|ndash ? em|ndash ]"
+    # can't handle "[ em|ndash ? em|ndash ]" as unknown name,
+    # use plain dash instead
     return s.replace( '—', '-' )
 
 
@@ -150,12 +162,28 @@ def get_name_parts( indi ):
 
 
 def get_levels_color( indi_data ):
-    global levels_tag
+    global levels_stats
+
+    found_tag = False
+
     result = DEFAULT_COLOR
     if 'even' in indi_data:
        for event in indi_data['even']:
            if levels_tag == event['type']:
-              result = LEVEL_COLORS.get( event['value'], DEFAULT_COLOR )
+              found_tag = True
+              value = event['value']
+              if looks_like_int( value ):
+                 value = int( value )
+                 if value in LEVEL_COLORS:
+                    result = LEVEL_COLORS[value]
+                 else:
+                    levels_stats['out of range'] += 1
+              else:
+                 levels_stats['not numeric'] += 1
+
+    if not found_tag:
+       levels_stats['missing'] += 1
+
     return result
 
 
@@ -163,7 +191,7 @@ def compute_color( gender_guess, indi ):
     global color_index
 
     result = PLAIN_COLORS[color_index]
-    color_index = ( color_index + 1 ) % n_plain_colors
+    color_index = ( color_index + 1 ) % N_PLAIN_COLORS
 
     if use_gender:
        gender = 'x'
@@ -202,63 +230,9 @@ def print_key_value( leadin, key, value ):
     print( leadin + '"' + key + '":"' + value + '"', end='' )
 
 
-def ancestors( indi, color, needs_comma, indent ):
-    stats = dict()
-    stats['n'] = 1
-
-    if use_levels:
-       stats['missing'] = 0
-       stats['out-of-range'] = 0
-       for level_color in LEVEL_COLORS:
-           stats[level_color] = 0
-
-    if needs_comma:
-       print( ',' )
-
-    name_parts = get_name_parts( indi )
-    detail = name_parts[0]
-    first = name_parts[1]
-
-    print( indent, end='' )
-    print_key_value( '{', 'name', first )
-    print_key_value( ', ', 'detail', detail )
-    print_key_value( ', ', 'color', color )
-
-    # assume only biological relationships
-    if 'famc' in data[i_key][indi]:
-       fam = data[i_key][indi]['famc'][0]
-
-       # these are the person's parents, but the drawing code needs tree node "children"
-       print( ', "children": [' )
-
-       add_comma = False
-       for partner_type in ['wife','husb']:
-           if partner_type in data[f_key][fam]:
-              partner = data[f_key][fam][partner_type][0]
-              new_stats = ancestors( partner, compute_color(partner_type,partner), add_comma, indent + '  ' )
-              add_comma = True
-
-              for item in new_stats:
-                  stats[item] += new_stats[item]
-
-       print( '\n', indent, ']}', end='' )
-
-    else:
-       print( ', "size": 1 }', end='' )
-
-    return stats
-
-
-def descendants( indi, color, needs_comma, indent, parents ):
-    stats = dict()
-    stats['n'] = 1
-    stats = dict()
-
-    if use_levels:
-       stats['missing'] = 0
-       stats['out-of-range'] = 0
-       for level_color in LEVEL_COLORS:
-           stats[level_color] = 0
+def print_person_line( indent, needs_comma, indi, color, parents ):
+    global n_individuals
+    n_individuals += 1
 
     if needs_comma:
        print( ',' )
@@ -270,10 +244,42 @@ def descendants( indi, color, needs_comma, indent, parents ):
     if parents:
        detail += '\\nParents:\\n' + parents
 
-    print( indent, end='' )
-    print_key_value( '{', 'name', first )
-    print_key_value( ', ', 'detail', detail )
-    print_key_value( ', ', 'color', color )
+    new_line = indent
+    print_key_value( new_line + '{', 'name', first )
+    # comma to and previous item, epace to skip initial open paren
+    # line break so that jslint doesn't complain (so much) about long lines
+    new_line = ',\n' + indent + ' '
+    print_key_value( new_line, 'color', color )
+    print_key_value( new_line, 'detail', detail )
+
+    return new_line
+
+
+def ancestors( indi, color, needs_comma, indent ):
+    line_prefix = print_person_line( indent, needs_comma, indi, color, '' )
+
+    # assume only biological relationships
+    if 'famc' in data[i_key][indi]:
+       fam = data[i_key][indi]['famc'][0]
+
+       # these are the person's parents, but the drawing code needs tree node "children"
+       print( line_prefix + '"children": [' )
+
+       add_comma = False
+       for partner_type in ['wife','husb']:
+           if partner_type in data[f_key][fam]:
+              partner = data[f_key][fam][partner_type][0]
+              ancestors( partner, compute_color(partner_type,partner), add_comma, indent + indent_more )
+              add_comma = True
+
+       print( '\n', indent, ']}', end='' )
+
+    else:
+       print( line_prefix + '"size": 1 }', end='' )
+
+
+def descendants( indi, color, needs_comma, indent, parents ):
+    line_prefix = print_person_line( indent, needs_comma, indi, color, parents )
 
     n_children = 0
     needs_comma = False
@@ -286,25 +292,19 @@ def descendants( indi, color, needs_comma, indent, parents ):
                   n_children += 1
 
                   if n_children == 1:
-                     print( ', "children": [' )
-                  new_stats = descendants( child, compute_color('x',child), needs_comma, indent + '  ', parent_info )
+                     print( line_prefix + '"children": [' )
+
+                  descendants( child, compute_color('x',child), needs_comma, indent + indent_more, parent_info )
                   needs_comma = True
 
     if n_children > 0:
        print( '\n', indent, ']}', end='' )
     else:
-       print( ', "size": 1 }', end='' )
+       print( line_prefix + '"size": 1 }', end='' )
 
-    return stats
-
-
-use_levels = False
-use_gender = False
-levels_tag = None
-add_dates = False
 
 options = get_program_options()
-print( options, file=sys.stderr ) #debug
+#print( options, file=sys.stderr ) #debug
 
 if options['scheme'] == 'gender':
    use_gender = True
@@ -313,6 +313,11 @@ if options['levels_tag']:
    use_levels = True
    levels_tag = options['levels_tag']
 add_dates = options['dates']
+# extra message to prevent confusion with color scheme
+if options['scheme'] == 'levels' and not use_levels:
+   # even though scheme=levels is not actually required
+   print( 'Color scheme set to "levels" but tag for levels value not included.', file=sys.stderr )
+   sys.exit(1)
 
 readgedcom = load_my_module( 'readgedcom', options['libpath'] )
 
@@ -335,10 +340,15 @@ if len(start_ids) > 1:
 
 print( 'Starting with', get_name_parts( start_ids[0] )[0], file=sys.stderr )
 
+# begin the json for javascript loading
+print( 'var loadData=' )
+
 stats = []
 if options['direction'] == 'anc':
-   stats = ancestors( start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
+   ancestors( start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
 else:
-   stats = descendants( start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
+   descendants( start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
 
-print( stats, file=sys.stderr )
+print( 'Displayed individuals', n_individuals, file=sys.stderr )
+if use_levels:
+   print( levels_stats, file=sys.stderr )
