@@ -4,7 +4,7 @@ Requires use of an associated javascript library and d3.js
 
 This code is released under the MIT License: https://opensource.org/licenses/MIT
 Copyright (c) 2023 John A. Andrea
-v0.3
+v0.4
 
 No support provided.
 """
@@ -15,15 +15,15 @@ import argparse
 import re
 import os
 
-DEFAULT_COLOR = '#e0f3f8'  #level missing or out of range, bluish
+DEFAULT_COLOR = '#e0f3f8'  #level missing or out of range: bluish
 
-LEVEL_COLORS = {0:'#a50026', # unidentified ancestor, redish
-                1:'#d73027', # names only, redorangish
-                2:'#f46d43', # vital stats, lighter red
-                3:'#fdae61', # occ, residence, children, spouses, orangish
-                4:'#fee08b', # property, military service, yellowish
-                5:'#a6d96a', # genealogical proof standard, light greenish
-                6:'#1a9850'  # biography, greenish
+LEVEL_COLORS = {0:'#a50026', # unidentified ancestor: redish
+                1:'#d73027', # names only: redorangish
+                2:'#f46d43', # vital stats: lighter red
+                3:'#fdae61', # occ, residence, children, spouses: orangish
+                4:'#fee08b', # property, military service: yellowish
+                5:'#a6d96a', # genealogical proof standard: light greenish
+                6:'#1a9850'  # biography: greenish
                }
 
 PLAIN_COLORS = ['#E5D8BD', '#FFFFB3', '#BEBADA', '#FB8072', '#80B1D3', '#FDB462',
@@ -152,12 +152,29 @@ def fix_names( s ):
     return s.replace( '—', '-' )
 
 
+def get_best_event( tag, indi_data ):
+    # just the year
+    result = ''
+    if tag in indi_data:
+       best = 0
+       if readgedcom.BEST_EVENT_KEY in indi_data:
+          if tag in indi_data[readgedcom.BEST_EVENT_KEY]:
+             best = indi_data[readgedcom.BEST_EVENT_KEY][tag]
+          if 'date' in indi_data[tag][best]:
+             if indi_data[tag][best]['date']['is_known']:
+                result = indi_data[tag][best]['date']['min']['year']
+    return result
+
+
 def get_name_parts( indi ):
     name = fix_names( data[i_key][indi]['name'][0]['unicode'] )
     names = name.split()
     first = names[0]
     if add_dates:
-       name += '\\ndates'
+       birth = get_best_event( 'birt', data[i_key][indi] )
+       death = get_best_event( 'deat', data[i_key][indi] )
+       if birth or death:
+          name += ' (' + str(birth) +'-'+ str(death) + ')'
     return [ name, first ]
 
 
@@ -348,6 +365,8 @@ if options['direction'] == 'anc':
    ancestors( start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
 else:
    descendants( start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
+
+print( ';' )
 
 print( 'Displayed individuals', n_individuals, file=sys.stderr )
 if use_levels:
