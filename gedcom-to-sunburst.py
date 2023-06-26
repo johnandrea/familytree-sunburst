@@ -1,13 +1,18 @@
 """
-Create a json file for displaying family as a javascript sunburst.
-Requires use of an associated javascript library and d3.js
+Create a json file for displaying family as a javascript zoomable sunburst.
 
 The levels is a research concept from Yvette Hoitink
 https://www.dutchgenealogy.nl/six-levels-ancestral-profiles/
 
+In order for the display to work, need d3
+https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js
+and the sunburst code
+https://gist.github.com/vasturiano/12da9071095fbd4df434e60d52d2d58d
+but rather my modification which gets the item color from the data.
+
 This code is released under the MIT License: https://opensource.org/licenses/MIT
 Copyright (c) 2023 John A. Andrea
-v0.5
+v0.6
 
 No support provided.
 """
@@ -254,7 +259,7 @@ def print_key_value( leadin, key, value ):
     print( leadin + '"' + key + '":"' + value + '"', end='' )
 
 
-def print_person_line( indent, needs_comma, indi, color, parents ):
+def print_person_line( note, indent, needs_comma, indi, color, parents ):
     global n_individuals
     n_individuals += 1
 
@@ -265,6 +270,8 @@ def print_person_line( indent, needs_comma, indi, color, parents ):
     detail = name_parts[0]
     first = name_parts[1]
 
+    if note:
+       first = note + first
     if parents:
        detail += '\\nParents:\\n' + parents
 
@@ -279,8 +286,11 @@ def print_person_line( indent, needs_comma, indi, color, parents ):
     return new_line
 
 
-def ancestors( indi, color, needs_comma, indent ):
-    line_prefix = print_person_line( indent, needs_comma, indi, color, '' )
+def ancestors( first_person, indi, color, needs_comma, indent ):
+    first_note = ''
+    if first_person:
+       first_note = 'Ancestors of\\n'
+    line_prefix = print_person_line( first_note, indent, needs_comma, indi, color, '' )
 
     # assume only biological relationships
     if 'famc' in data[i_key][indi]:
@@ -293,7 +303,7 @@ def ancestors( indi, color, needs_comma, indent ):
        for partner_type in ['wife','husb']:
            if partner_type in data[f_key][fam]:
               partner = data[f_key][fam][partner_type][0]
-              ancestors( partner, compute_color(partner_type,partner), add_comma, indent + indent_more )
+              ancestors( False, partner, compute_color(partner_type,partner), add_comma, indent + indent_more )
               add_comma = True
 
        print( '\n', indent, ']}', end='' )
@@ -302,8 +312,11 @@ def ancestors( indi, color, needs_comma, indent ):
        print( line_prefix + '"size": 1 }', end='' )
 
 
-def descendants( indi, color, needs_comma, indent, parents ):
-    line_prefix = print_person_line( indent, needs_comma, indi, color, parents )
+def descendants( first_person, indi, color, needs_comma, indent, parents ):
+    first_note = ''
+    if first_person:
+       first_note = 'Descendents of\\n'
+    line_prefix = print_person_line( first_note, indent, needs_comma, indi, color, parents )
 
     n_children = 0
     needs_comma = False
@@ -318,7 +331,7 @@ def descendants( indi, color, needs_comma, indent, parents ):
                   if n_children == 1:
                      print( line_prefix + '"children": [' )
 
-                  descendants( child, compute_color('x',child), needs_comma, indent + indent_more, parent_info )
+                  descendants( False, child, compute_color('x',child), needs_comma, indent + indent_more, parent_info )
                   needs_comma = True
 
     if n_children > 0:
@@ -367,10 +380,10 @@ print( 'Starting with', get_name_parts( start_ids[0] )[0], file=sys.stderr )
 print( 'var loadData=' )
 
 if options['direction'] == 'anc':
-   ancestors( start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
+   ancestors( True, start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
 else:
    # maybe should get parents for start person instead of currently skipping
-   descendants( start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
+   descendants( True, start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
 
 # end
 print( ';' )
