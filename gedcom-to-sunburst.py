@@ -2,9 +2,12 @@
 Create a json file for displaying family as a javascript sunburst.
 Requires use of an associated javascript library and d3.js
 
+The levels is a research concept from Yvette Hoitink
+https://www.dutchgenealogy.nl/six-levels-ancestral-profiles/
+
 This code is released under the MIT License: https://opensource.org/licenses/MIT
 Copyright (c) 2023 John A. Andrea
-v0.4
+v0.5
 
 No support provided.
 """
@@ -44,6 +47,7 @@ n_individuals = 0
 levels_stats = {'missing':0, 'not numeric':0, 'out of range':0}
 for level in LEVEL_COLORS:
     levels_stats[level] = 0
+gender_stats = {'f':0, 'm':0, 'x':0}
 indent_more = ' '
 
 
@@ -193,6 +197,7 @@ def get_levels_color( indi_data ):
                  value = int( value )
                  if value in LEVEL_COLORS:
                     result = LEVEL_COLORS[value]
+                    levels_stats[value] += 1
                  else:
                     levels_stats['out of range'] += 1
               else:
@@ -206,6 +211,7 @@ def get_levels_color( indi_data ):
 
 def compute_color( gender_guess, indi ):
     global color_index
+    global gender_stats
 
     result = PLAIN_COLORS[color_index]
     color_index = ( color_index + 1 ) % N_PLAIN_COLORS
@@ -222,6 +228,7 @@ def compute_color( gender_guess, indi ):
           if gender_guess == 'husb':
              gender = 'm'
        result = GENDER_COLORS[gender]
+       gender_stats[gender] += 1
 
     else:
        if use_levels:
@@ -321,7 +328,6 @@ def descendants( indi, color, needs_comma, indent, parents ):
 
 
 options = get_program_options()
-#print( options, file=sys.stderr ) #debug
 
 if options['scheme'] == 'gender':
    use_gender = True
@@ -360,14 +366,22 @@ print( 'Starting with', get_name_parts( start_ids[0] )[0], file=sys.stderr )
 # begin the json for javascript loading
 print( 'var loadData=' )
 
-stats = []
 if options['direction'] == 'anc':
    ancestors( start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
 else:
+   # maybe should get parents for start person instead of currently skipping
    descendants( start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
 
+# end
 print( ';' )
 
+# show the stats to stderr
 print( 'Displayed individuals', n_individuals, file=sys.stderr )
 if use_levels:
-   print( levels_stats, file=sys.stderr )
+   print( 'Level', 'Count', file=sys.stderr )
+   for level in levels_stats:
+       print( level, levels_stats[level], file=sys.stderr )
+if use_gender:
+   print( 'Gender', 'Count', file=sys.stderr )
+   for gender in gender_stats:
+       print( gender, gender_stats[gender], file=sys.stderr )
