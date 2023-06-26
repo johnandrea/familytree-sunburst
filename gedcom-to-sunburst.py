@@ -1,10 +1,13 @@
 """
 Create a json file for displaying family as a javascript zoomable sunburst.
+Direction can be ancestors or descendants.
+Colors can be plain, gender, or 6 levels.
 
-The levels is a research concept from Yvette Hoitink
+The "6 levels" is a research concept from Yvette Hoitink
 https://www.dutchgenealogy.nl/six-levels-ancestral-profiles/
+The 6 level values should be stored in the gedcom as a custom event; value 0 to 6.
 
-In order for the display to work, need d3
+In order for the display to work, need d3 v4
 https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js
 and the sunburst code
 https://gist.github.com/vasturiano/12da9071095fbd4df434e60d52d2d58d
@@ -12,7 +15,6 @@ but rather my modification which gets the item color from the data.
 
 This code is released under the MIT License: https://opensource.org/licenses/MIT
 Copyright (c) 2023 John A. Andrea
-v0.6
 
 No support provided.
 """
@@ -23,7 +25,7 @@ import argparse
 import re
 import os
 
-DEFAULT_COLOR = '#e0f3f8'  #level missing or out of range: bluish
+DEFAULT_COLOR = '#e0f3f8'  # level missing or out of range: greyish
 
 LEVEL_COLORS = {0:'#a50026', # unidentified ancestor: redish
                 1:'#d73027', # names only: redorangish
@@ -54,6 +56,10 @@ for level in LEVEL_COLORS:
     levels_stats[level] = 0
 gender_stats = {'f':0, 'm':0, 'x':0}
 indent_more = ' '
+
+
+def show_version():
+    print( '2.0' )
 
 
 def load_my_module( module_name, relative_path ):
@@ -87,10 +93,11 @@ def load_my_module( module_name, relative_path ):
 def get_program_options():
     results = dict()
 
-    directions = [ 'desc', 'descendant', 'descendants', 'descendent', 'descendents',
+    directions = [ 'desc', 'descendant', 'descendants',
                    'anc', 'ancestor', 'ancestors' ]
     schemes = [ 'plain', 'gender', 'levels' ]
 
+    results['version'] = False
     results['infile'] = None
     results['start_person'] = None
     results['levels_tag'] = None
@@ -104,6 +111,9 @@ def get_program_options():
 
     arg_help = 'Produce a JSON file for Javascript sunburst display.'
     parser = argparse.ArgumentParser( description=arg_help )
+
+    arg_help = 'Show version then exit.'
+    parser.add_argument( '--version', default=results['version'], action='store_true', help=arg_help )
 
     arg_help = 'Color scheme. Plain or gender. Default: ' + results['scheme']
     parser.add_argument( '--scheme', default=results['scheme'], type=str, help=arg_help )
@@ -129,6 +139,7 @@ def get_program_options():
 
     args = parser.parse_args()
 
+    results['version'] = args.version
     results['infile'] = args.infile.name
     results['start_person'] = args.start_person.lower().strip()
 
@@ -315,7 +326,7 @@ def ancestors( first_person, indi, color, needs_comma, indent ):
 def descendants( first_person, indi, color, needs_comma, indent, parents ):
     first_note = ''
     if first_person:
-       first_note = 'Descendents of\\n'
+       first_note = 'Descendants of\\n'
     line_prefix = print_person_line( first_note, indent, needs_comma, indi, color, parents )
 
     n_children = 0
@@ -340,7 +351,17 @@ def descendants( first_person, indi, color, needs_comma, indent, parents ):
        print( line_prefix + '"size": 1 }', end='' )
 
 
+def show_stats( label, stats ):
+   print( label, 'Count:', file=sys.stderr )
+   for name in stats:
+       print( name, stats[name], file=sys.stderr )
+
+
 options = get_program_options()
+
+if options['version']:
+   show_version()
+   sys.exit( 0 )
 
 if options['scheme'] == 'gender':
    use_gender = True
@@ -389,12 +410,8 @@ else:
 print( ';' )
 
 # show the stats to stderr
-print( 'Displayed individuals', n_individuals, file=sys.stderr )
+print( 'Displayed individuals:', n_individuals, file=sys.stderr )
 if use_levels:
-   print( 'Level', 'Count', file=sys.stderr )
-   for level in levels_stats:
-       print( level, levels_stats[level], file=sys.stderr )
+   show_stats( 'Level', levels_stats )
 if use_gender:
-   print( 'Gender', 'Count', file=sys.stderr )
-   for gender in gender_stats:
-       print( gender, gender_stats[gender], file=sys.stderr )
+   show_stats( 'Gender', gender_stats )
