@@ -95,17 +95,17 @@ def get_program_options():
 
     directions = [ 'desc', 'descendant', 'descendants',
                    'anc', 'ancestor', 'ancestors' ]
-    schemes = [ 'plain', 'gender', 'levels' ]
+    styles = [ 'plain', 'gender', 'levels' ]
 
     results['version'] = False
     results['infile'] = None
     results['start_person'] = None
     results['levels_tag'] = None
 
-    results['scheme'] = schemes[0]
+    results['style'] = styles[0]
     results['direction'] = directions[0]
     results['dates'] = False
-    results['id_item'] = 'xref'
+    results['idtag'] = 'xref'
 
     results['libpath'] = '.'
 
@@ -115,8 +115,8 @@ def get_program_options():
     arg_help = 'Show version then exit.'
     parser.add_argument( '--version', default=results['version'], action='store_true', help=arg_help )
 
-    arg_help = 'Color scheme. Plain or gender. Default: ' + results['scheme']
-    parser.add_argument( '--scheme', default=results['scheme'], type=str, help=arg_help )
+    arg_help = 'Color style. Plain or gender. Default: ' + results['style']
+    parser.add_argument( '--style', default=results['style'], type=str, help=arg_help )
 
     arg_help = 'Direction of the tree from the start person. Ancestors or descendants.'
     arg_help += ' Default:' + results['direction']
@@ -127,7 +127,7 @@ def get_program_options():
 
     arg_help = 'How to find the person in the input. Default is the gedcom id "xref".'
     arg_help += ' Othewise choose "type.exid", "type.refnum", etc.'
-    parser.add_argument( '--id_item', default=results['id_item'], type=str, help=arg_help )
+    parser.add_argument( '--idtag', default=results['idtag'], type=str, help=arg_help )
 
     # maybe this should be changed to have a type which better matched a directory
     arg_help = 'Location of the gedcom library. Default is current directory.'
@@ -148,16 +148,16 @@ def get_program_options():
        results['levels_tag'] = args.levels_tag.strip()
 
     results['dates'] = args.dates
-    results['id_item'] = args.id_item.lower().strip()
+    results['idtag'] = args.idtag.lower().strip()
     results['libpath'] = args.libpath
 
     value = args.direction.lower()
     if value.startswith('anc'):
        results['direction'] = 'anc'
 
-    value = args.scheme.lower()
-    if value in schemes:
-       results['scheme'] = value
+    value = args.style.lower()
+    if value in styles:
+       results['style'] = value
 
     return results
 
@@ -363,17 +363,17 @@ if options['version']:
    show_version()
    sys.exit( 0 )
 
-if options['scheme'] == 'gender':
+if options['style'] == 'gender':
    use_gender = True
 if options['levels_tag']:
    use_gender = False
    use_levels = True
    levels_tag = options['levels_tag']
 add_dates = options['dates']
-# extra message to prevent confusion with color scheme
-if options['scheme'] == 'levels' and not use_levels:
-   # even though scheme=levels is not actually required
-   print( 'Color scheme set to "levels" but tag for levels value not included.', file=sys.stderr )
+# extra message to prevent confusion with color style
+if options['style'] == 'levels' and not use_levels:
+   # even though style=levels is not actually required
+   print( 'Color style set to "levels" but tag for levels value not included.', file=sys.stderr )
    sys.exit(1)
 
 readgedcom = load_my_module( 'readgedcom', options['libpath'] )
@@ -386,13 +386,13 @@ data = readgedcom.read_file( options['infile'], read_opts )
 i_key = readgedcom.PARSED_INDI
 f_key = readgedcom.PARSED_FAM
 
-start_ids = readgedcom.find_individuals( data, options['id_item'], options['start_person'] )
+start_ids = readgedcom.find_individuals( data, options['idtag'], options['start_person'] )
 
 if len(start_ids) < 1:
-   print( 'Did not find start person:', options['start_person'], 'with', options['id_item'], file=sys.stderr )
+   print( 'Did not find start person:', options['start_person'], 'with', options['idtag'], file=sys.stderr )
    sys.exit(1)
 if len(start_ids) > 1:
-   print( 'More than one id for start person:', options['start_person'], 'with', options['id_item'], file=sys.stderr )
+   print( 'More than one id for start person:', options['start_person'], 'with', options['idtag'], file=sys.stderr )
    sys.exit(1)
 
 print( 'Starting with', get_name_parts( start_ids[0] )[0], file=sys.stderr )
