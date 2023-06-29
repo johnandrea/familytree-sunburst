@@ -49,7 +49,7 @@ Name of the custom event containing the level6 values. This argument is optional
 
 --idtag= name of the GEDCOM tag containing the identifier for the start-person.
 
-Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used the tag should be "refn". Or if a custom identifier is used it should be prefixed with "type." as in "type.myident". This option is not used for the "plain" and "gender" styles.
+Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used the tag should be "refn". Or if a custom identifier is used it should be prefixed with "type." as in "type.myident".
 
 --direction= anc or ancestors or desc or descendants. Default is "descendants"
 
