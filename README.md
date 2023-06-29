@@ -59,7 +59,7 @@ Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used 
 
 The selection of family members relative to the start-person.
 
---scheme= plain or gender or levels. Default is "plain".
+--style= plain or gender or levels. Default is "plain".
 
 Colors used in the diagram.
 
