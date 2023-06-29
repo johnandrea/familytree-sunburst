@@ -47,10 +47,6 @@ level6-tag
 
 Name of the custom event containing the level6 values. This argument is optional, if missing the diagram is based on the "--style" option, if included it overrides the "--style" option.
 
---version 
-
-Display the version number then exit.
-
 --idtag= name of the GEDCOM tag containing the identifier for the start-person.
 
 Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used the tag should be "refn". Or if a custom identifier is used it should be prefixed with "type." as in "type.myident". This option is not used for the "plain" and "gender" styles.
@@ -66,6 +62,10 @@ Colors used in the diagram.
 --dates
 
 Include birth and death dates in the person details.
+
+--version 
+
+Display the version number then exit.
 
 --libpath=relative-path-to-library
 
