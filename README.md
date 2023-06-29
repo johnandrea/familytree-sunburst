@@ -81,17 +81,17 @@ gedcom-to-sunburst.py  family.ged  27  >family.json
 
 Plain display of ancestors of the same person
 ```
-gedcom-to-sunburst.py --anc family.ged  27  >family.json
+gedcom-to-sunburst.py --dir=anc family.ged  27  >family.json
 ```
 
 Display genders of ancestors of person identified by reference number 412, including dates
 ```
-gedcom-to-sunburst.py --dates --anc --style=gender --id=refn  family.ged  412  >family.json
+gedcom-to-sunburst.py --dates --dir=anc --style=gender --id=refn  family.ged  412  >family.json
 ```
 
 Display research levels of the same person (see above) using the custom tag "6levels". Note that the "--style" option is not required since the use of the levels tag name automatically selects the style.
 ```
-gedcom-to-sunburst.py --dates --anc --id=refn  family.ged  412  6levels >family.json
+gedcom-to-sunburst.py --dates --dir=anc --id=refn  family.ged  412  6levels >family.json
 ```
 
 ## HTML Page
