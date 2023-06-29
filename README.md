@@ -3,11 +3,9 @@ Produce a family tree display from a GEDCOM file - to be viewed/zoomed/hovered i
 
 The display is based on the D3.js Zoomable Sunburst:
 https://bl.ocks.org/vasturiano/12da9071095fbd4df434e60d52d2d58d
-  Circle sections are clickable to zoom into that section and descendants.
-Clicking on the center of circle will zoom out.
+  Circle sections are clickable to zoom into that section and descendants. Clicking on the center of the circle will zoom out.
 
-In the produced diagram, person details are shown when the mouse
-hovers over a circle section.
+In the produced diagram, person details are shown when the mouse hovers over a circle section.
 
 The "6 levels" is a genealogy research concept from Yvette Hoitink:
 https://www.dutchgenealogy.nl/six-levels-ancestral-profiles/
@@ -47,9 +45,7 @@ id of the person in the middle of the diagram for display of ancestors or descen
 
 level6-tag
 
-Name of the custom event containing the level6 values. This argument is optional, if
-missing the diagram is based on the "--style" option, if included it overrides the
-"--style" option.
+Name of the custom event containing the level6 values. This argument is optional, if missing the diagram is based on the "--style" option, if included it overrides the "--style" option.
 
 --version 
 
@@ -57,11 +53,7 @@ Display the version number then exit.
 
 --idtag= name of the GEDCOM tag containing the identifier for the start-person.
 
-Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used
-the tag should be "refn". Or if a custom identifier is used it should be prefixed
-with "type." as in "type.myident". This option is not used for the "plain" and
-"gender" styles.
-
+Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used the tag should be "refn". Or if a custom identifier is used it should be prefixed with "type." as in "type.myident". This option is not used for the "plain" and "gender" styles.
 
 --direction= anc or ancestors or desc or descendants. Default is "descendants"
 
@@ -77,8 +69,7 @@ Include birth and death dates in the person details.
 
 --libpath=relative-path-to-library
 
-The directory containing the readgedcom library, relative to the . Default is ".",
-the same location as this program file.
+The directory containing the readgedcom library, relative to the . Default is ".", the same location as this program file.
 
 ## Usage
 
@@ -98,9 +89,7 @@ Display genders of ancestors of person identified by reference number 412, inclu
 gedcom-to-sunburst.py --dates --anc --style=gender --id=refn  family.ged  412  >family.json
 ```
 
-Display research levels of the same person (see above) using the custom tag "6levels".
-Note that the "--style" option is not required since the use of the levels tag name
-automatically selects the style.
+Display research levels of the same person (see above) using the custom tag "6levels". Note that the "--style" option is not required since the use of the levels tag name automatically selects the style.
 ```
 gedcom-to-sunburst.py --dates --anc --id=refn  family.ged  412  6levels >family.json
 ```
@@ -122,9 +111,7 @@ A basic HTML page used to display the diagram might look like this:
 </html>
 ```
 
-I have found that the CDN for d3 is sometimes slow to load, so making use of a local copy
-of d3 (included in project) is sometimes required. Or if the displaying computer is not
-connected to the Internet.
+I have found that the CDN for d3 is sometimes slow to load, so making use of a local copy of d3 (included in project) is sometimes required. Or if the displaying computer is not connected to the Internet.
 ```
 <!DOCTYPE html>
 <html lang="en">
