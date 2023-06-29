@@ -89,7 +89,7 @@ Display genders of ancestors of person identified by reference number 412, inclu
 gedcom-to-sunburst.py --dates --dir=anc --style=gender --id=refn  family.ged  412  >family.json
 ```
 
-Display research levels of the same person (see above) using the custom tag "6levels". Note that the "--style" option is not required since the use of the levels tag name automatically selects the style.
+Display research levels (see above) of the same person using the custom tag "6levels". Note that the "--style" option is not required since the use of the levels tag name automatically selects the style.
 ```
 gedcom-to-sunburst.py --dates --dir=anc --id=refn  family.ged  412  6levels >family.json
 ```
