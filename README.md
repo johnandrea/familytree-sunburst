@@ -69,7 +69,7 @@ Display the version number then exit.
 
 --libpath=relative-path-to-library
 
-The directory containing the readgedcom library, relative to the . Default is ".", the same location as this program file.
+The directory containing the readgedcom library, relative to the script. Default is ".", the same location as this program file.
 
 ## Usage
 
