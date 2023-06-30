@@ -129,5 +129,5 @@ I have found that the CDN for d3 is sometimes slow to load, so making use of a l
 
 ## Bug reports
 
-- The sunburst Javascript library has not been tested with d3 newer than version 4.13.0
+- The sunburst Javascript library has not been tested with d3 other than version 4.13
 - This code is provided with neither support nor warranty.
