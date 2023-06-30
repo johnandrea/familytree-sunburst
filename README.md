@@ -5,6 +5,7 @@ The display is based on the D3.js Zoomable Sunburst:
 https://bl.ocks.org/vasturiano/12da9071095fbd4df434e60d52d2d58d
   Circle sections are clickable to zoom into that section and descendants. Clicking on the center of the circle will zoom out.
 
+The diagram's color style is selectable as plain, gender, and levels.
 In the produced diagram, person details are shown when the mouse hovers over a name.
 
 The "6 levels" is a genealogy research concept from Yvette Hoitink:
