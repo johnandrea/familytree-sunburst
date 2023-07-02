@@ -24,6 +24,7 @@ import importlib.util
 import argparse
 import re
 import os
+import random
 
 DEFAULT_COLOR = '#e0f3f8'  # level missing or out of range: greyish
 
@@ -57,9 +58,12 @@ for level in LEVEL_COLORS:
 gender_stats = {'f':0, 'm':0, 'x':0}
 indent_more = ' '
 
+# not an option, but a flag anyway
+show_levels_number = True
+
 
 def show_version():
-    print( '2.0' )
+    print( '2.1' )
 
 
 def load_my_module( module_name, relative_path ):
@@ -95,7 +99,7 @@ def get_program_options():
 
     directions = [ 'desc', 'descendant', 'descendants',
                    'anc', 'ancestor', 'ancestors' ]
-    styles = [ 'plain', 'gender', 'levels' ]
+    styles = [ 'plain', 'gender', 'levels', 'randplain' ]
 
     results['version'] = False
     results['infile'] = None
@@ -186,69 +190,76 @@ def get_best_event( tag, indi_data ):
     return result
 
 
-def get_name_parts( indi ):
-    name = fix_names( data[i_key][indi]['name'][0]['unicode'] )
+def get_name_parts( indi_data ):
+    name = fix_names( indi_data['name'][0]['unicode'] )
     names = name.split()
     first = names[0]
     if add_dates:
-       birth = get_best_event( 'birt', data[i_key][indi] )
-       death = get_best_event( 'deat', data[i_key][indi] )
+       birth = get_best_event( 'birt', indi_data )
+       death = get_best_event( 'deat', indi_data )
        if birth or death:
           name += ' (' + str(birth) +'-'+ str(death) + ')'
     return [ name, first ]
 
 
-def get_levels_color( indi_data ):
-    global levels_stats
-
-    found_tag = False
-
-    result = DEFAULT_COLOR
+def get_level( indi_data ):
+    result = ''
     if 'even' in indi_data:
        for event in indi_data['even']:
            if levels_tag == event['type']:
-              found_tag = True
-              value = event['value']
-              if looks_like_int( value ):
-                 value = int( value )
-                 if value in LEVEL_COLORS:
-                    result = LEVEL_COLORS[value]
-                    levels_stats[value] += 1
-                 else:
-                    levels_stats['out of range'] += 1
-              else:
-                 levels_stats['not numeric'] += 1
+              result = event['value']
+              break
+    return result
 
-    if not found_tag:
+
+def get_levels_color( level ):
+    # side effect => gather stats
+    global levels_stats
+
+    result = DEFAULT_COLOR
+
+    if level:
+       if looks_like_int( level ):
+          value = int( level )
+          if value in LEVEL_COLORS:
+             result = LEVEL_COLORS[value]
+             levels_stats[value] += 1
+          else:
+             levels_stats['out of range'] += 1
+       else:
+         levels_stats['not numeric'] += 1
+    else:
        levels_stats['missing'] += 1
 
     return result
 
 
-def compute_color( gender_guess, indi ):
-    global color_index
+def get_gender_color( indi_data ):
+    # side effect => gather gender stats
     global gender_stats
+
+    gender = 'x'
+    if 'sex' in indi_data:
+       sex = indi_data['sex'][0].lower()
+       if sex in ['m','f']:
+          gender = sex
+
+    gender_stats[gender] += 1
+    return GENDER_COLORS[gender]
+
+
+def compute_color( indi_data, level ):
+    global color_index
 
     result = PLAIN_COLORS[color_index]
     color_index = ( color_index + 1 ) % N_PLAIN_COLORS
 
     if use_gender:
-       gender = 'x'
-       if 'sex' in data[i_key][indi]:
-          sex = data[i_key][indi]['sex'][0].lower()
-          if sex in ['m','f']:
-             gender = sex
-       else:
-          if gender_guess == 'wife':
-             gender = 'f'
-          if gender_guess == 'husb':
-             gender = 'm'
-       result = GENDER_COLORS[gender]
-       gender_stats[gender] += 1
+       result = get_gender_color( indi_data )
 
     else:
        if use_levels:
-         result = get_levels_color( data[i_key][indi] )
+         result = get_levels_color( level )
 
     return result
 
@@ -260,26 +271,34 @@ def get_parents( fam ):
         if parent in data[f_key][fam]:
            parent_id = data[f_key][fam][parent][0]
            if parent_id is not None:
-              name_parts = get_name_parts( parent_id )
+              name_parts = get_name_parts( data[i_key][parent_id] )
               result += space + name_parts[0]
               space = '\\n+ '
     return result
 
 
-def print_key_value( leadin, key, value ):
+def print_key_and_value( leadin, key, value ):
     print( leadin + '"' + key + '":"' + value + '"', end='' )
 
 
-def print_person_line( note, indent, needs_comma, indi, color, parents ):
+def print_person_line( note, indent, needs_comma, indi_data, parents ):
     global n_individuals
     n_individuals += 1
 
     if needs_comma:
        print( ',' )
 
-    name_parts = get_name_parts( indi )
+    name_parts = get_name_parts( indi_data )
     detail = name_parts[0]
     first = name_parts[1]
+
+    level = None
+    if use_levels:
+       level = get_level( indi_data )
+       if level and show_levels_number:
+          extra = ' [' + str(level) + ']'
+          #first += extra
+          detail += extra
 
     if note:
        first = note + first
@@ -287,25 +306,25 @@ def print_person_line( note, indent, needs_comma, indi, color, parents ):
        detail += '\\nParents:\\n' + parents
 
     new_line = indent
-    print_key_value( new_line + '{', 'name', first )
+    print_key_and_value( new_line + '{', 'name', first )
     # comma to and previous item, epace to skip initial open paren
     # line break so that jslint doesn't complain (so much) about long lines
     new_line = ',\n' + indent + ' '
-    print_key_value( new_line, 'color', color )
-    print_key_value( new_line, 'detail', detail )
+    print_key_and_value( new_line, 'color', compute_color( indi_data, level ) )
+    print_key_and_value( new_line, 'detail', detail )
 
     return new_line
 
 
-def ancestors( first_person, indi, color, needs_comma, indent ):
+def ancestors( first_person, indi_data, needs_comma, indent ):
     first_note = ''
     if first_person:
        first_note = 'Ancestors of\\n'
-    line_prefix = print_person_line( first_note, indent, needs_comma, indi, color, '' )
+    line_prefix = print_person_line( first_note, indent, needs_comma, indi_data, '' )
 
     # assume only biological relationships
-    if 'famc' in data[i_key][indi]:
-       fam = data[i_key][indi]['famc'][0]
+    if 'famc' in indi_data:
+       fam = indi_data['famc'][0]
 
        # these are the person's parents, but the drawing code needs tree node "children"
        print( line_prefix + '"children": [' )
@@ -314,7 +333,7 @@ def ancestors( first_person, indi, color, needs_comma, indent ):
        for partner_type in ['wife','husb']:
            if partner_type in data[f_key][fam]:
               partner = data[f_key][fam][partner_type][0]
-              ancestors( False, partner, compute_color(partner_type,partner), add_comma, indent + indent_more )
+              ancestors( False, data[i_key][partner], add_comma, indent + indent_more )
               add_comma = True
 
        print( '\n', indent, ']}', end='' )
@@ -323,17 +342,17 @@ def ancestors( first_person, indi, color, needs_comma, indent ):
        print( line_prefix + '"size": 1 }', end='' )
 
 
-def descendants( first_person, indi, color, needs_comma, indent, parents ):
+def descendants( first_person, indi_data, needs_comma, indent, parents ):
     first_note = ''
     if first_person:
        first_note = 'Descendants of\\n'
-    line_prefix = print_person_line( first_note, indent, needs_comma, indi, color, parents )
+    line_prefix = print_person_line( first_note, indent, needs_comma, indi_data, parents )
 
     n_children = 0
     needs_comma = False
 
-    if 'fams' in data[i_key][indi]:
-       for fam in data[i_key][indi]['fams']:
+    if 'fams' in indi_data:
+       for fam in indi_data['fams']:
            parent_info = get_parents( fam )
            if 'chil' in data[f_key][fam]:
               for child in data[f_key][fam]['chil']:
@@ -342,7 +361,7 @@ def descendants( first_person, indi, color, needs_comma, indent, parents ):
                   if n_children == 1:
                      print( line_prefix + '"children": [' )
 
-                  descendants( False, child, compute_color('x',child), needs_comma, indent + indent_more, parent_info )
+                  descendants( False, data[i_key][child], needs_comma, indent + indent_more, parent_info )
                   needs_comma = True
 
     if n_children > 0:
@@ -375,6 +394,9 @@ if options['style'] == 'levels' and not use_levels:
    # even though style=levels is not actually required
    print( 'Color style set to "levels" but tag for levels value not included.', file=sys.stderr )
    sys.exit(1)
+if options['style'] == 'randplain':
+   PLAIN_COLORS = random.sample( PLAIN_COLORS, len(PLAIN_COLORS) )
+   options['style'] = 'plain'
 
 readgedcom = load_my_module( 'readgedcom', options['libpath'] )
 
@@ -395,16 +417,16 @@ if len(start_ids) > 1:
    print( 'More than one id for start person:', options['start_person'], 'with', options['idtag'], file=sys.stderr )
    sys.exit(1)
 
-print( 'Starting with', get_name_parts( start_ids[0] )[0], file=sys.stderr )
+print( 'Starting with', get_name_parts( data[i_key][start_ids[0]] )[0], file=sys.stderr )
 
 # begin the json for javascript loading
 print( 'var loadData=' )
 
 if options['direction'] == 'anc':
-   ancestors( True, start_ids[0], compute_color( 'x', start_ids[0] ), False, '' )
+   ancestors( True, data[i_key][start_ids[0]], False, '' )
 else:
    # maybe should get parents for start person instead of currently skipping
-   descendants( True, start_ids[0], compute_color( 'x', start_ids[0] ), False, '', '' )
+   descendants( True, data[i_key][start_ids[0]], False, '', '' )
 
 # end
 print( ';' )
