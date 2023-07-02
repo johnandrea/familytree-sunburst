@@ -682,8 +682,8 @@
 1 DEAT Y
 1 FAMS @F35@
 0 @I73@ INDI
-1 NAME Betty, /Smith/
-2 GIVN Betty,
+1 NAME Betty /Smith/
+2 GIVN Betty
 2 SURN Smith
 1 SEX F
 1 BIRT
