@@ -29,7 +29,7 @@ The 6 level values should be stored in the gedcom as a custom event; value 0 to 
 ## Limitations
 
 - Requires Python 3.6+
-- 
+
 ## Installation
 
 No installation process. Copy the program, the readgedcom library and the Javascript files.
