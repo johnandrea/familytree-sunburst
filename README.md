@@ -24,12 +24,12 @@ The 6 level values should be stored in the gedcom as a custom event; value 0 to 
 - Output is a JSON file for inclusion in a web page.
 - Makes use of [readgedcom.py](https://github.com/johnandrea/readgedcom) library.
 - Requires the included modified version of the zoomable-sunburst Javascript and css files.
-- Requires d3 version 4 Javascript library
+- Requires d3 version 4 Javascript graphics library. Original at [d3js.org](https://d3js.org/)
 
 ## Limitations
 
 - Requires Python 3.6+
-
+- 
 ## Installation
 
 No installation process. Copy the program, the readgedcom library and the Javascript files.
@@ -56,9 +56,9 @@ Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used 
 
 The selection of family members relative to the start-person.
 
---style= plain or gender or levels. Default is "plain".
+--style= plain or gender or levels or randoplain. Default is "plain".
 
-Colors used in the diagram.
+Colors used in the diagram. "randplain" causes the plain colors to be randomized at every run.
 
 --dates
 
