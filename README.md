@@ -56,7 +56,7 @@ Default is "xref", i.e. the GEDCOM INDI number. If a "Reference Number" is used 
 
 The selection of family members relative to the start-person.
 
---style= plain or gender or levels or randoplain. Default is "plain".
+--style= plain or gender or levels or randplain. Default is "plain".
 
 Colors used in the diagram. "randplain" causes the plain colors to be randomized at every run.
 
