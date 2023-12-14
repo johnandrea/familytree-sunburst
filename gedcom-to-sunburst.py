@@ -62,8 +62,8 @@ indent_more = ' '
 show_levels_number = True
 
 
-def show_version():
-    print( '2.1' )
+def get_version():
+    return '2.2'
 
 
 def load_my_module( module_name, relative_path ):
@@ -101,7 +101,6 @@ def get_program_options():
                    'anc', 'ancestor', 'ancestors' ]
     styles = [ 'plain', 'gender', 'levels', 'randplain' ]
 
-    results['version'] = False
     results['infile'] = None
     results['start_person'] = None
     results['levels_tag'] = None
@@ -117,7 +116,7 @@ def get_program_options():
     parser = argparse.ArgumentParser( description=arg_help )
 
     arg_help = 'Show version then exit.'
-    parser.add_argument( '--version', default=results['version'], action='store_true', help=arg_help )
+    parser.add_argument( '--version', action='version', version=get_version() )
 
     arg_help = 'Color style. Plain or gender. Default: ' + results['style']
     parser.add_argument( '--style', default=results['style'], type=str, help=arg_help )
@@ -143,7 +142,6 @@ def get_program_options():
 
     args = parser.parse_args()
 
-    results['version'] = args.version
     results['infile'] = args.infile.name
     results['start_person'] = args.start_person.lower().strip()
 
@@ -377,10 +375,6 @@ def show_stats( label, stats ):
 
 
 options = get_program_options()
-
-if options['version']:
-   show_version()
-   sys.exit( 0 )
 
 if options['style'] == 'gender':
    use_gender = True
